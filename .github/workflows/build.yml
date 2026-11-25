@@ -23,7 +23,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --location --retry 3 --retry-delay 2 'https://my.pally.com/f/gDj81VUeNQvM?download=1' -o /tmp/abu-ai-studio-source.zip
+          curl --fail --location --retry 3 --retry-delay 2 "${SOURCE_URL:?set SOURCE_URL to the private corrected source archive}" -o /tmp/abu-ai-studio-source.zip
           unzip -q /tmp/abu-ai-studio-source.zip -d /tmp/abu-ai-studio-source
           test -f /tmp/abu-ai-studio-source/abu-ai-studio/build.gradle
           for file in \
@@ -85,7 +85,7 @@ jobs:
           fi
           printf 'JAR_PATH=%s\n' "${jars[0]}" >> "$GITHUB_ENV"
 
-      - name: Publish direct JAR download in private repository release
+      - name: Publish direct JAR download in release
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
