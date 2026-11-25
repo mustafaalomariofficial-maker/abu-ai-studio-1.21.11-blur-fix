@@ -92,7 +92,9 @@ jobs:
         run: |
           set -euo pipefail
           TAG='build-20261125-fix1'
-          gh release create "$TAG" "$JAR_PATH" \
+          jar_path="/tmp/abu-ai-studio-source/abu-ai-studio/$JAR_PATH"
+          test -f "$jar_path"
+          gh release create "$TAG" "$jar_path" \
             --repo "$GITHUB_REPOSITORY" \
             --title 'AbuPixels AI Studio 1.0.0 for Minecraft 1.21.11' \
             --notes 'Built by GitHub Actions from the corrected source. Minecraft in-game testing was not performed.'
