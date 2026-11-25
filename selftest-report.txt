@@ -1,0 +1,31 @@
+SELFTEST form-template keys: [pose_overlay, hitboxHeight, color, disabled_tracks, pickable, hp, cem_sitting, cem_tamed, shaderShadow, states, shape_keys, render_layer, transform, step_height, additive_color, model, bone_tracks, id, cem_burning, track_name, hitboxWidth, cem_aggressive, visible, hitboxEyeHeight, pose, render_last, cem_on_shoulder, hitboxSneakMultiplier, cem_in_lava, cem_climbing, lighting, hitbox, movement_speed, uiScale, materials, bones, color_overlay, anchor, keybind, cem_crawling, name, parts, transform_overlay, cem_health, actions, wind]
+SELFTEST subtitle keys: [color, shadow, imageRight, tick, title, enabled, layer, duration, envelope, transform, shadowOpaque, background, lineHeight, fontSize, placement, textShadow, backgroundOffset, maxWidth, imageScale]
+SELFTEST start (story → agent)
+SELFTEST agent status=DONE steps=22 finished=true
+SELFTEST tool: plan_set {"steps":["بناء منصة","استدعاء شخصية","إنشاء فيلم"]}
+SELFTEST tool: get_world_state {}
+SELFTEST tool: fill_blocks {"x1":40,"y1":-63,"z1":40,"x2":46,"y2":-63,"z2":46,"block":"minecraft:stone_bricks"}
+SELFTEST tool: get_block {"x":43,"y":-63,"z":43}
+SELFTEST tool: npc_spawn {"name":"سعد","x":41,"y":-62,"z":41}
+SELFTEST tool: npc_goto {"name":"سعد","x":45,"y":-62,"z":45}
+SELFTEST tool: npc_place_block {"name":"سعد","x":45,"y":-62,"z":46,"block":"minecraft:oak_planks"}
+SELFTEST tool: npc_say {"name":"سعد","text":"مرحبًا يا أصدقائي، هذه بداية القصة!"}
+SELFTEST tool: bbs_form_template {"type":"model"}
+SELFTEST tool: bbs_clip_template {"type":"idle"}
+SELFTEST tool: bbs_clip_template {"type":"subtitle"}
+SELFTEST tool: bbs_film_create {"film":"selftest_film","description":"فيلم اختبار ذاتي"}
+SELFTEST tool: bbs_film_add_replay {"film":"selftest_film","label":"البطل","form_json":"{\"type\":\"bbs:model\",\"model\":\"emoticons/steve\"}","x":40,"y":-62,"z":40}
+SELFTEST tool: bbs_film_add_keyframes {"film":"selftest_film","replay":"البطل","channel":"x","keys":[{"tick":0,"value":40},{"tick":60,"value":45}]}
+SELFTEST tool: bbs_film_add_clip {"film":"selftest_film","type":"idle","tick":0,"duration":80,"title":"لقطة افتتاحية"}
+SELFTEST tool: bbs_film_add_subtitle {"film":"selftest_film","text":"في يوم من الأيام...","tick":10,"duration":50}
+SELFTEST tool: bbs_film_get {"film":"selftest_film"}
+SELFTEST tool: run_command {"command":"time set day"}
+SELFTEST tool: run_command {"command":"stop"}
+SELFTEST tool: export_project {"send":false}
+SELFTEST tool: take_screenshot {}
+SELFTEST tool: finish {"summary":"انتهى الاختبار الذاتي"}
+SELFTEST notification: 🔔 ⚠️ تعطل المزود «مزود معطل» والموديل «m1» | السبب: نفدت الحصة أو الرصيد (HTTP 429) | ↪️ تم التبديل إلى «مزود سليم» والموديل «m2» والمتابعة من نقطة التوقف.
+SELFTEST check platform_built=true npc_exists=true npc_at=45,-60,45 npc_reached=true npc_placed_block=true film_saved=true
+SELFTEST check dangerous_command_blocked=true failover_notified=true
+SELFTEST check screenshot_honest_on_server=true
+SELFTEST RESULT PASS

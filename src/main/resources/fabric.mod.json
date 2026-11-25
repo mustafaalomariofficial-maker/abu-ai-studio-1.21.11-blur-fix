@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "abu_studio",
+  "version": "${version}",
+  "name": "AbuPixels AI Studio / استوديو الأنيميشن الذكي",
+  "description": "استوديو أنيميشن بالذكاء الاصطناعي لـ BBS: اكتب قصتك بالعربية فيخطط وينفذ داخل اللعبة. / AI animation studio addon for BBS FS.",
+  "authors": ["AbuPixels"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["dev.abustudio.AbuStudio"],
+    "client": ["dev.abustudio.client.AbuStudioClient"],
+    "bbs-addon": ["dev.abustudio.BbsAddon"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*",
+    "bbs": "*"
+  }
+}
