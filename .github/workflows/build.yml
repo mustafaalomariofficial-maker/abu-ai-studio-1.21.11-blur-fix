@@ -41,7 +41,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY' >> "$GITHUB_ENV"
+          metadata="$(python3 - <<'PY'
           import json, re, urllib.request
           url = 'https://api.modrinth.com/v2/version/EwbK2XQL'
           with urllib.request.urlopen(url, timeout=30) as response:
@@ -54,11 +54,14 @@ jobs:
           file = matches[0]
           file_url = file.get('url', '')
           digest = file.get('hashes', {}).get('sha512', '')
-          if not file_url.startswith('https://cdn.modrinth.com/') or '\n' in file_url or '\r' in file_url or not re.fullmatch(r'[0-9a-fA-F]{128}', digest):
+          if not file_url.startswith('https://cdn.modrinth.com/') or any(ch in file_url for ch in '\\r\\n\\t') or not re.fullmatch(r'[0-9a-fA-F]{128}', digest):
               raise SystemExit('Modrinth file URL or SHA-512 did not pass validation')
-          print('BBS_URL=' + file_url)
-          print('BBS_SHA512=' + digest)
+          print(file_url + '\\t' + digest)
           PY
+          )"
+          IFS=$'\\t' read -r BBS_URL BBS_SHA512 <<< "$metadata"
+          test -n "$BBS_URL"
+          test -n "$BBS_SHA512"
           mkdir -p /tmp/abu-ai-studio-source/abu-ai-studio/libs
           curl --fail --location --retry 3 --retry-delay 2 "$BBS_URL" -o /tmp/abu-ai-studio-source/abu-ai-studio/libs/bbs-2.7-1.21.11.jar
           echo "$BBS_SHA512  /tmp/abu-ai-studio-source/abu-ai-studio/libs/bbs-2.7-1.21.11.jar" | sha512sum --check --status
@@ -74,10 +77,10 @@ jobs:
           mapfile -t jars < <(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' ! -name '*-dev.jar' | sort)
           if [ "${#jars[@]}" -ne 1 ]; then
             echo "Expected one production JAR, found ${#jars[@]}" >&2
-            find build/libs -maxdepth 1 -type f -printf '%f\n' >&2 || true
+            find build/libs -maxdepth 1 -type f -printf '%f\\n' >&2 || true
             exit 1
           fi
-          printf 'JAR_PATH=%s\n' "${jars[0]}" >> "$GITHUB_ENV"
+          printf 'JAR_PATH=%s\\n' "${jars[0]}" >> "$GITHUB_ENV"
 
       - name: Publish direct JAR download in private repository release
         env:
