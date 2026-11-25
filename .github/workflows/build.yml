@@ -32,7 +32,7 @@ jobs:
             src/client/java/dev/abustudio/client/SettingsScreen.java \
             src/client/java/dev/abustudio/client/ProvidersScreen.java \
             src/client/java/dev/abustudio/client/ProviderEditScreen.java; do
-            if grep -nE 'renderBackground[[:space:]]*\\(' "/tmp/abu-ai-studio-source/abu-ai-studio/$file"; then
+            if grep -nF 'renderBackground(' "/tmp/abu-ai-studio-source/abu-ai-studio/$file"; then
               echo "Unexpected manual background blur call remains in $file" >&2
               exit 1
             fi
@@ -55,7 +55,7 @@ jobs:
           file = matches[0]
           file_url = file.get('url', '')
           digest = file.get('hashes', {}).get('sha512', '')
-          if not file_url.startswith('https://cdn.modrinth.com/') or '\\n' in file_url or not re.fullmatch(r'[0-9a-fA-F]{128}', digest):
+          if not file_url.startswith('https://cdn.modrinth.com/') or '\n' in file_url or '\r' in file_url or not re.fullmatch(r'[0-9a-fA-F]{128}', digest):
               raise SystemExit('Modrinth file URL or SHA-512 did not pass validation')
           print('BBS_URL=' + file_url)
           print('BBS_SHA512=' + digest)
