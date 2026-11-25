@@ -54,12 +54,15 @@ jobs:
           file = matches[0]
           file_url = file.get('url', '')
           digest = file.get('hashes', {}).get('sha512', '')
-          if not file_url.startswith('https://cdn.modrinth.com/') or any(ch in file_url for ch in '\\r\\n\\t') or not re.fullmatch(r'[0-9a-fA-F]{128}', digest):
+          if not file_url.startswith('https://cdn.modrinth.com/') or any(ord(ch) < 32 or ord(ch) == 127 for ch in file_url) or not re.fullmatch(r'[0-9a-fA-F]{128}', digest):
               raise SystemExit('Modrinth file URL or SHA-512 did not pass validation')
-          print(file_url + '\\t' + digest)
+          print(file_url)
+          print(digest)
           PY
           )"
-          IFS=$'\\t' read -r BBS_URL BBS_SHA512 <<< "$metadata"
+          mapfile -t bbs_values <<< "$metadata"
+          BBS_URL="${bbs_values[0]}"
+          BBS_SHA512="${bbs_values[1]}"
           test -n "$BBS_URL"
           test -n "$BBS_SHA512"
           mkdir -p /tmp/abu-ai-studio-source/abu-ai-studio/libs
@@ -77,10 +80,10 @@ jobs:
           mapfile -t jars < <(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' ! -name '*-dev.jar' | sort)
           if [ "${#jars[@]}" -ne 1 ]; then
             echo "Expected one production JAR, found ${#jars[@]}" >&2
-            find build/libs -maxdepth 1 -type f -printf '%f\\n' >&2 || true
+            find build/libs -maxdepth 1 -type f -printf '%f\n' >&2 || true
             exit 1
           fi
-          printf 'JAR_PATH=%s\\n' "${jars[0]}" >> "$GITHUB_ENV"
+          printf 'JAR_PATH=%s\n' "${jars[0]}" >> "$GITHUB_ENV"
 
       - name: Publish direct JAR download in private repository release
         env:
