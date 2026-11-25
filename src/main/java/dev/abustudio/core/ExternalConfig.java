@@ -21,7 +21,13 @@ public final class ExternalConfig
     /** @return a short Arabic note for the log, or "" when there is nothing to read. */
     public static String apply(Path configRoot, StudioConfig cfg, SecretStore secrets)
     {
-        if (configRoot == null) return "";
+        if (configRoot == null || cfg == null || secrets == null) return "";
+
+        // Ship a usable provider preset, never a credential. The user can add a key in-game or in the
+        // external config file; until then Router.setupProblem() explains exactly what is missing.
+        if (cfg.providers.isEmpty())
+            cfg.providers.add(ProviderConfig.preset("groq", "groq"));
+
         Path f = file(configRoot);
         if (!Files.isRegularFile(f)) return "";
 
