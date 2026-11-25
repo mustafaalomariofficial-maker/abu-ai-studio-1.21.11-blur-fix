@@ -1,0 +1,94 @@
+name: Build AbuPixels AI Studio
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Download corrected source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --retry-delay 2 'https://my.pally.com/f/gDj81VUeNQvM?download=1' -o /tmp/abu-ai-studio-source.zip
+          unzip -q /tmp/abu-ai-studio-source.zip -d /tmp/abu-ai-studio-source
+          test -f /tmp/abu-ai-studio-source/abu-ai-studio/build.gradle
+          for file in \
+            src/client/java/dev/abustudio/client/StudioScreen.java \
+            src/client/java/dev/abustudio/client/SettingsScreen.java \
+            src/client/java/dev/abustudio/client/ProvidersScreen.java \
+            src/client/java/dev/abustudio/client/ProviderEditScreen.java; do
+            if grep -nE 'renderBackground[[:space:]]*\\(' "/tmp/abu-ai-studio-source/abu-ai-studio/$file"; then
+              echo "Unexpected manual background blur call remains in $file" >&2
+              exit 1
+            fi
+          done
+
+      - name: Download and verify official BBS FS 2.7 dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          import json, re, urllib.request
+          url = 'https://api.modrinth.com/v2/version/EwbK2XQL'
+          with urllib.request.urlopen(url, timeout=30) as response:
+              version = json.load(response)
+          if version.get('version_number') != '2.7-1.21.11':
+              raise SystemExit('Unexpected Modrinth version metadata')
+          matches = [f for f in version.get('files', []) if f.get('filename') == 'bbs-2.7-1.21.11.jar']
+          if not matches:
+              raise SystemExit('The official BBS JAR was not listed by Modrinth')
+          file = matches[0]
+          file_url = file.get('url', '')
+          digest = file.get('hashes', {}).get('sha512', '')
+          if not file_url.startswith('https://cdn.modrinth.com/') or '\\n' in file_url or not re.fullmatch(r'[0-9a-fA-F]{128}', digest):
+              raise SystemExit('Modrinth file URL or SHA-512 did not pass validation')
+          print('BBS_URL=' + file_url)
+          print('BBS_SHA512=' + digest)
+          PY
+          mkdir -p /tmp/abu-ai-studio-source/abu-ai-studio/libs
+          curl --fail --location --retry 3 --retry-delay 2 "$BBS_URL" -o /tmp/abu-ai-studio-source/abu-ai-studio/libs/bbs-2.7-1.21.11.jar
+          echo "$BBS_SHA512  /tmp/abu-ai-studio-source/abu-ai-studio/libs/bbs-2.7-1.21.11.jar" | sha512sum --check --status
+          echo 'Official BBS FS dependency downloaded and SHA-512 verified.'
+
+      - name: Build and test the corrected project
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/abu-ai-studio-source/abu-ai-studio
+          chmod +x gradlew
+          ./gradlew --no-daemon clean build
+          mapfile -t jars < <(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' ! -name '*-dev.jar' | sort)
+          if [ "${#jars[@]}" -ne 1 ]; then
+            echo "Expected one production JAR, found ${#jars[@]}" >&2
+            find build/libs -maxdepth 1 -type f -printf '%f\n' >&2 || true
+            exit 1
+          fi
+          printf 'JAR_PATH=%s\n' "${jars[0]}" >> "$GITHUB_ENV"
+
+      - name: Publish direct JAR download in private repository release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG='build-20261125-fix1'
+          gh release create "$TAG" "$JAR_PATH" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title 'AbuPixels AI Studio 1.0.0 for Minecraft 1.21.11' \
+            --notes 'Built by GitHub Actions from the corrected source. Minecraft in-game testing was not performed.'
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json url,assets --jq '{url: .url, assets: [.assets[] | {name: .name, url: .url, size: .size}]}'
